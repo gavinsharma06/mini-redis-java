@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MiniRedisStoreTest {
 
     @Test
-    void setValueReturnsStoredValue(){
+    void setValueGetStoredValue(){
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("language","Java");
         String actual = testStore.get("language");
@@ -27,5 +27,20 @@ public class MiniRedisStoreTest {
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("Alice","exists");
         assertFalse(testStore.exists("Ali"));
+    }
+
+    @Test
+    void presentKeyDeleteKeyShouldNotExist(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("David","bout to be deleted");
+        assertEquals(1,testStore.delete("David"));
+        assertFalse(testStore.exists("David"));
+    }
+
+    @Test
+    void missingKeyDeleteKeyReturnZero(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("David","Dave be deleted instead");
+        assertEquals(0,testStore.delete("Dave"));
     }
 }

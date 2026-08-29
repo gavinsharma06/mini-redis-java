@@ -17,5 +17,12 @@ public class MiniRedisStore {
         return redisStorage.containsKey(key);
     }
 
+    public int delete(String key){
+        if (exists(key)){
+            redisStorage.remove(key);
+            return 1;
+        }
+        return 0;
+    }
 
 }
