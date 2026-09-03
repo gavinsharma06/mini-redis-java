@@ -25,4 +25,23 @@ public class MiniRedisStore {
         return 0;
     }
 
+    public long incr(String key){
+        long increment;
+        String value;
+
+        if (!exists(key)){
+            long keyDoesNotExist=0;
+            increment = keyDoesNotExist+1;
+            value = String.valueOf(increment);
+            set(key,value);
+            return increment;
+        }
+        long numberValue = Long.parseLong(get(key));
+        increment=numberValue+1;
+        value = String.valueOf(increment);
+        set(key,value);
+        return increment;
+
+    }
+
 }
