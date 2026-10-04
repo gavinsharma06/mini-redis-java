@@ -69,7 +69,7 @@ public class MiniRedisStoreTest {
         assertEquals("0", testStore.get("counter"));
     }
     @Test
-    void incrInvalidValueThrowException(){
+    void incrInvalidValueThrowsException(){
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("counter","banana");
         assertThrows(NumberFormatException.class,() -> testStore.incr("counter"));
@@ -81,5 +81,35 @@ public class MiniRedisStoreTest {
         testStore.set("counter","banana");
         assertThrows(NumberFormatException.class,() -> testStore.incr("counter"));
         assertEquals("banana", testStore.get("counter"));
+    }
+
+    @Test
+    void incrOverflowThrowsException(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("counter",String.valueOf(Long.MAX_VALUE));
+        assertThrows(ArithmeticException.class, () -> testStore.incr("counter"));
+    }
+
+    @Test
+    void incrOverflowDoesNotChangeStoredValue(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("counter", String.valueOf(Long.MAX_VALUE));
+        assertThrows(ArithmeticException.class, () -> testStore.incr("counter"));
+        assertEquals(String.valueOf(Long.MAX_VALUE),testStore.get("counter"));
+    }
+
+    @Test
+    void incrInvalidNumberThrowsException(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("counter", "9223372036854775808");
+        assertThrows(NumberFormatException.class,()->testStore.incr("counter"));
+    }
+
+    @Test
+    void incrInvalidNumberDoesNotChangeStoredValue(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("counter", "9223372036854775808");
+        assertThrows(NumberFormatException.class,()->testStore.incr("counter"));
+        assertEquals("9223372036854775808",testStore.get("counter"));
     }
 }

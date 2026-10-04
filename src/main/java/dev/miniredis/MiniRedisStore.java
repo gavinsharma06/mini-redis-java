@@ -37,7 +37,7 @@ public class MiniRedisStore {
             return increment;
         }
         long numberValue = Long.parseLong(get(key));
-        increment=numberValue+1;
+        increment=Math.incrementExact(numberValue);
         value = String.valueOf(increment);
         set(key,value);
         return increment;
