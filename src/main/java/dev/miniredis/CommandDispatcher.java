@@ -16,6 +16,12 @@ public class CommandDispatcher {
             }
             store.set(arguments.get(0),arguments.get(1));
             return "OK" ;
+        } else if (commandName.equalsIgnoreCase("GET")) {
+            if (arguments.size()!=1){
+                return "Valid arguments not found" ;
+            }
+            return store.get(arguments.get(0));
+
         }
         return "command not available / incorrect command" ;
 
