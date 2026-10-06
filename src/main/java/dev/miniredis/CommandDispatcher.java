@@ -9,21 +9,26 @@ public class CommandDispatcher {
         this.store = store;
     }
 
-    public String dispatch(String commandName, List<String> arguments){
+    public CommandResult dispatch(String commandName, List<String> arguments){
         if (commandName.equalsIgnoreCase("SET")){
             if (arguments.size()!=2){
-                return "Valid arguments not found";
+                return new ErrorResult("Valid arguments not found");
             }
             store.set(arguments.get(0),arguments.get(1));
-            return "OK" ;
+            return new StatusResult("OK") ;
         } else if (commandName.equalsIgnoreCase("GET")) {
+
             if (arguments.size()!=1){
-                return "Valid arguments not found" ;
+                return new ErrorResult("Valid arguments not found") ;
             }
-            return store.get(arguments.get(0));
+            String value = store.get(arguments.get(0));
+            if (value==null) {
+                return new NullResult();
+            }
+            return new StringResult(value);
 
         }
-        return "command not available / incorrect command" ;
+        return new ErrorResult("command not available / incorrect command") ;
 
     }
 

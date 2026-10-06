@@ -10,11 +10,14 @@ public class CommandDispatcherTest {
 
 
     @Test
-    void dispatcher_OnSetWithValidArguments_StoresValueReturnsOk(){
+    void dispatcher_OnSetWithValidArguments_StoresValueReturnsStatusResult(){
         MiniRedisStore testStore = new MiniRedisStore() ;
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
-
-        assertEquals("OK", dispatcher.dispatch("SET", List.of("name","Bro"))) ;
+        CommandResult result =
+                dispatcher.dispatch("SET", List.of("name", "Bro"));
+        assertTrue(result instanceof StatusResult);
+        StatusResult statusResult= (StatusResult) result;
+        assertEquals("OK", statusResult.getValue());
         assertEquals("Bro",testStore.get("name"));
     }
 
