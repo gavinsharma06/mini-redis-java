@@ -27,6 +27,16 @@ public class CommandDispatcher {
             }
             return new StringResult(value);
 
+        } else if (commandName.equalsIgnoreCase("EXISTS")) {
+            if (arguments.size() !=1){
+                return new ErrorResult("Valid arguments not found");
+            }
+            boolean value = store.exists(arguments.get(0));
+            if (value){
+                return new IntegerResult(1L);
+            }
+            return new IntegerResult(0L);
+
         }
         return new ErrorResult("command not available / incorrect command") ;
 

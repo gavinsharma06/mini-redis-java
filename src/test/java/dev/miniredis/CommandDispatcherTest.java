@@ -63,4 +63,37 @@ public class CommandDispatcherTest {
         assertTrue(result instanceof NullResult);
     }
 
+    @Test
+    void dispatcher_OnExistsWithExistingKey_ReturnsCorrectIntegerResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("name","Bro");
+        CommandResult result = dispatcher.dispatch("EXISTS",List.of("name"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(1L,integerResult.getValue());
+    }
+
+    @Test
+    void dispatcher_OnExistsWithMissingKey_ReturnsCorrectIntegerResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("EXISTS", List.of("something"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(0L, integerResult.getValue());
+    }
+
+    @Test
+    void dispatcher_OnExistsWithIncorrectArity_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("EXISTS",List.of("name","Bro"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult=(ErrorResult) result;
+        assertEquals("Valid arguments not found", errorResult.getError());
+    }
+
+
+
 }
