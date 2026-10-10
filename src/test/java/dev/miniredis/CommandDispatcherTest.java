@@ -10,7 +10,7 @@ public class CommandDispatcherTest {
 
 
     @Test
-    void dispatcher_OnSetWithValidArguments_StoresValueReturnsStatusResult(){
+    void dispatcher_OnSetWithValidArguments_StoresValue_ReturnsStatusResult(){
         MiniRedisStore testStore = new MiniRedisStore() ;
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
         CommandResult result =
@@ -22,7 +22,7 @@ public class CommandDispatcherTest {
     }
 
     @Test
-    void dispatcher_OnSetWithInvalidArguments_ReturnsErrorResultAndDoesNotModifyStore(){
+    void dispatcher_OnSetWithInvalidArguments_ReturnsErrorResult_AndDoesNotModifyStore(){
         MiniRedisStore testStore = new MiniRedisStore() ;
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
         CommandResult result= dispatcher.dispatch("SET",List.of("name"));
@@ -33,7 +33,7 @@ public class CommandDispatcherTest {
     }
 
     @Test
-    void dispatcher_OnUnknownCommand_ReturnsErrorResultAndDoesNotModifyStore(){
+    void dispatcher_OnUnknownCommand_ReturnsErrorResult_AndDoesNotModifyStore(){
         MiniRedisStore testStore = new MiniRedisStore();
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
         CommandResult result = dispatcher.dispatch("something",List.of("irrelevant"));
@@ -94,6 +94,38 @@ public class CommandDispatcherTest {
         assertEquals("Valid arguments not found", errorResult.getError());
     }
 
+    @Test
+    void dispatcher_OnDeleteWithExistingKey_ReturnsCorrectIntegerResult_AndModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("name","Bro");
+        CommandResult result = dispatcher.dispatch("DEL",List.of("name"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(1L, integerResult.getValue());
+        assertFalse(testStore.exists("name"));
+    }
+
+    @Test
+    void dispatcher_OnDeleteWithMissingKey_ReturnsCorrectIntegerResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("DEL",List.of("something"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(0L, integerResult.getValue());
+    }
+
+    @Test
+    void dispatcher_OnDeleteWithIncorrectArity_ReturnCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("name", "Bro");
+        CommandResult result = dispatcher.dispatch("DEL", List.of("name","Bro"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Valid arguments not found", errorResult.getError());
+    }
 
 
 }
