@@ -37,11 +37,23 @@ public class CommandDispatcher {
             }
             return new IntegerResult(0L);
         } else if (commandName.equalsIgnoreCase("DEL")) {
-            if (arguments.size()!=1){
+            if (arguments.size()!= 1){
                 return new ErrorResult("Valid arguments not found");
             }
             int value = store.delete(arguments.get(0));
             return new IntegerResult(value);
+        } else if(commandName.equalsIgnoreCase("INCR")){
+            if(arguments.size() != 1){
+                return new ErrorResult("Valid arguments not found");
+            }
+            try {
+                long value = store.incr(arguments.get(0));
+                return new IntegerResult(value);
+            } catch (NumberFormatException e){
+                return new ErrorResult("Value is not numeric");
+            }catch (ArithmeticException e){
+                return  new ErrorResult("Overflow Occurred, Game Over");
+            }
         }
         return new ErrorResult("command not available / incorrect command") ;
 

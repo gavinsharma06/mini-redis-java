@@ -127,5 +127,63 @@ public class CommandDispatcherTest {
         assertEquals("Valid arguments not found", errorResult.getError());
     }
 
+    @Test
+    void dispatcher_OnIncrWithCorrectValue_ReturnsIntegerResult_AndModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("GAVIN","1");
+        CommandResult result = dispatcher.dispatch("INCR",List.of("GAVIN"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(2L,integerResult.getValue());
+        assertEquals("2",testStore.get("GAVIN"));
+    }
+
+    @Test
+    void dispatcher_OnIncrWithMissingKey_ReturnsCorrectIntegerResult_AndModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("INCR", List.of("something"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(1L,integerResult.getValue());
+        assertEquals("1",testStore.get("something"));
+    }
+
+    @Test
+    void dispatcher_OnIncrWithInvalidValue_ReturnsCorrectErrorResult_AndDoesNotModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("name","GAVIN");
+        CommandResult result = dispatcher.dispatch("INCR", List.of("name"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Value is not numeric",errorResult.getError());
+        assertEquals("GAVIN",testStore.get("name"));
+    }
+
+    @Test
+    void dispatcher_OnIncr_OnOverflow_ReturnsCorrectErrorResult_AndDoesNotModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("GAVIN",String.valueOf(Long.MAX_VALUE));
+        CommandResult result = dispatcher.dispatch("INCR",List.of("GAVIN"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Overflow Occurred, Game Over", errorResult.getError());
+        assertEquals(String.valueOf(Long.MAX_VALUE),testStore.get("GAVIN"));
+    }
+
+    @Test
+    void dispatcher_OnIncrWithIncorrectArity_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("GAVIN","1");
+        CommandResult result = dispatcher.dispatch("INCR", List.of("Gavin","1"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Valid arguments not found",errorResult.getError());
+    }
+
 
 }
