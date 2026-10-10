@@ -22,13 +22,24 @@ public class CommandDispatcherTest {
     }
 
     @Test
-    void dispatcher_OnSetWithInvalidArguments_ReturnsErrorResult_AndDoesNotModifyStore(){
+    void dispatcher_OnSetWithInvalidArity_ReturnsErrorResult_AndDoesNotModifyStore(){
         MiniRedisStore testStore = new MiniRedisStore() ;
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
         CommandResult result= dispatcher.dispatch("SET",List.of("name"));
         assertTrue(result instanceof ErrorResult);
         ErrorResult errorResult = (ErrorResult) result;
         assertEquals("Valid arguments not found",errorResult.getError());
+        assertNull(testStore.get("name"));
+    }
+
+    @Test
+    void dispatcher_OnSetWithTooManyArguments_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("SET", List.of("name","GAVIN","something"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult=(ErrorResult) result;
+        assertEquals("Valid arguments not found", errorResult.getError());
         assertNull(testStore.get("name"));
     }
 
@@ -61,6 +72,17 @@ public class CommandDispatcherTest {
         CommandDispatcher dispatcher = new CommandDispatcher(testStore);
         CommandResult result = dispatcher.dispatch("GET",List.of("name"));
         assertTrue(result instanceof NullResult);
+    }
+
+    @Test
+    void dispatcher_OnGetWithInvalidArity_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("name","Gavin");
+        CommandResult result = dispatcher.dispatch("GET", List.of("name","GAVIN"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult=(ErrorResult) result;
+        assertEquals("Valid arguments not found", errorResult.getError());
     }
 
     @Test
@@ -183,6 +205,18 @@ public class CommandDispatcherTest {
         assertTrue(result instanceof ErrorResult);
         ErrorResult errorResult = (ErrorResult) result;
         assertEquals("Valid arguments not found",errorResult.getError());
+    }
+
+    @Test
+    void dispatcher_OnMixedCaseCommand_ReturnsCorrectCommandResult(){
+        MiniRedisStore testStore = new MiniRedisStore() ;
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result =
+                dispatcher.dispatch("SeT", List.of("name", "Bro"));
+        assertTrue(result instanceof StatusResult);
+        StatusResult statusResult= (StatusResult) result;
+        assertEquals("OK", statusResult.getValue());
+        assertEquals("Bro",testStore.get("name"));
     }
 
 
