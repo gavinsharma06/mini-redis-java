@@ -1,10 +1,19 @@
 package dev.miniredis;
 import java.util.HashMap;
 import java.util.Map;
+import java.time.Clock;
 
 public class MiniRedisStore {
     private Map<String,String> redisStorage = new HashMap<>();
+    private final Clock clock;
 
+    public MiniRedisStore(){
+        this(Clock.systemUTC());
+    }
+
+    public MiniRedisStore(Clock clock){
+        this.clock=clock;
+    }
     public void set(String key, String value) {
         redisStorage.put(key, value);
     }
