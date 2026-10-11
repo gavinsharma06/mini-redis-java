@@ -9,4 +9,7 @@ target/
 .DS_Store
 Thumbs.db
 
+#project doc
+last_snapshot.md
+
 
