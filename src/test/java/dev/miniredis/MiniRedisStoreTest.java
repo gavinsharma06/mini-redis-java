@@ -2,9 +2,12 @@ package dev.miniredis;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 
 public class MiniRedisStoreTest {
@@ -111,5 +114,16 @@ public class MiniRedisStoreTest {
         testStore.set("counter", "9223372036854775808");
         assertThrows(NumberFormatException.class,()->testStore.incr("counter"));
         assertEquals("9223372036854775808",testStore.get("counter"));
+    }
+
+    @Test
+    void expireExistingKeyWithPositiveTTL_keepsKeyAvailableAndReturnsOne(){
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("name","bro");
+        assertEquals(1L, testStore.expire("name", 5L));
+        assertTrue(testStore.exists("name"));
+        assertEquals("bro", testStore.get("name"));
     }
 }
