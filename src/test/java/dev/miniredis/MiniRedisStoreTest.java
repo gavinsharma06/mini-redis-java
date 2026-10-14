@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 
@@ -125,5 +126,17 @@ public class MiniRedisStoreTest {
         assertEquals(1L, testStore.expire("name", 5L));
         assertTrue(testStore.exists("name"));
         assertEquals("bro", testStore.get("name"));
+    }
+
+    @Test
+    void expireExistingKeyWithPositiveTTL_RemovesKeyAfterTTL(){
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        ZoneId zone = ZoneOffset.UTC ;
+        MutableClock clock = new MutableClock(instant, zone);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("name", "Gavin");
+        testStore.expire("name",5L);
+        clock.advanceSeconds(5L);
+        assertFalse(testStore.exists("name"));
     }
 }
