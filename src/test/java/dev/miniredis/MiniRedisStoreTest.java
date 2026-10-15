@@ -139,4 +139,13 @@ public class MiniRedisStoreTest {
         clock.advanceSeconds(5L);
         assertFalse(testStore.exists("name"));
     }
+
+    @Test
+    void expireOnExistingKey_AndTTLIsZero_RemovesKeyReturnsOne(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("name","Brah");
+        assertEquals(1L,testStore.expire("name",0L ));
+        assertFalse(testStore.exists("name"));
+        assertNull(testStore.get("name"));
+    }
 }
