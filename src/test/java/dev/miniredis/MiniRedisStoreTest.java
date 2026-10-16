@@ -148,4 +148,12 @@ public class MiniRedisStoreTest {
         assertFalse(testStore.exists("name"));
         assertNull(testStore.get("name"));
     }
+
+    @Test
+    void expireOnMissingKey_ReturnsZero_AndDoesNotModifyStore(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        assertEquals(0L,testStore.expire("something",5L));
+        assertFalse(testStore.exists("something"));
+        assertNull(testStore.get("something"));
+    }
 }
