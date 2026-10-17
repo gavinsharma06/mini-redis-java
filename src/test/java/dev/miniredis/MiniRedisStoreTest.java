@@ -156,4 +156,21 @@ public class MiniRedisStoreTest {
         assertFalse(testStore.exists("something"));
         assertNull(testStore.get("something"));
     }
+
+    @Test
+    void expireOnExistingKeyWithExistingTTL_ReplacesTheTTL(){
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        ZoneId zone = ZoneOffset.UTC ;
+        MutableClock clock = new MutableClock(instant, zone);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("something","10");
+        testStore.expire("something",5L);
+        clock.advanceSeconds(2L);
+        assertTrue(testStore.exists("something"));
+        testStore.expire("something",10L);
+        clock.advanceSeconds(3L);
+        assertTrue(testStore.exists("something"));
+        clock.advanceSeconds(7L);
+        assertFalse(testStore.exists("something"));
+    }
 }
