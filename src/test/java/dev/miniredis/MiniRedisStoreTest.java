@@ -173,4 +173,18 @@ public class MiniRedisStoreTest {
         clock.advanceSeconds(7L);
         assertFalse(testStore.exists("something"));
     }
+
+    @Test
+    void setOnExistingKeyWithExistingTTL_RemovesTTL(){
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        ZoneId zone = ZoneOffset.UTC ;
+        MutableClock clock = new MutableClock(instant, zone);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("something","10");
+        testStore.expire("something",5L);
+        testStore.set("something","5");
+        clock.advanceSeconds(7L);
+        assertTrue(testStore.exists("something"));
+        assertEquals("5", testStore.get("something"));
+    }
 }
