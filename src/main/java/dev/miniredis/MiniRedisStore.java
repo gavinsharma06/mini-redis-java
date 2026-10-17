@@ -51,7 +51,7 @@ public class MiniRedisStore {
             set(key,value);
             return increment;
         }
-        long numberValue = Long.parseLong(get(key));
+        long numberValue = Long.parseLong(redisStorage.get(key));
         increment=Math.incrementExact(numberValue);
         value = String.valueOf(increment);
         redisStorage.put(key,value);
@@ -76,8 +76,8 @@ public class MiniRedisStore {
                 expirations.remove(key);
                 return 1L;
             }
-            long ttlMillis = ttl * 1000L;
-            long expiresAt = clock.instant().toEpochMilli() + ttlMillis;
+            long ttlMillis = Math.multiplyExact(ttl,1000L);
+            long expiresAt = Math.addExact(clock.instant().toEpochMilli(),ttlMillis);
             expirations.put(key, expiresAt);
             return 1L;
         }

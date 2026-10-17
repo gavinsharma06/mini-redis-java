@@ -214,4 +214,18 @@ public class MiniRedisStoreTest {
         clock.advanceSeconds(5L);
         assertFalse(testStore.exists("something"));
     }
+
+    @Test
+    void expireOnExistingKeyWithTTLOverflow_throwsException(){
+        long tooLong= Long.MAX_VALUE;
+        long notTooLong = Long.MAX_VALUE-500;
+        Instant instant = Instant.ofEpochMilli(notTooLong);
+        ZoneId zone = ZoneOffset.UTC;
+        MutableClock clock = new MutableClock(instant, zone);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("something", "10");
+        assertThrows(ArithmeticException.class, () -> testStore.expire("something", tooLong));
+        testStore.set("somethingElse","5");
+        assertThrows(ArithmeticException.class, () -> testStore.expire("somethingElse", 1));
+    }
 }

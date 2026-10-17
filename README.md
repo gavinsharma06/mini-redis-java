@@ -2,22 +2,26 @@
 
 MiniRedis Java is a small educational project: a Redis-like command layer built from scratch in Java.
 
-The point of the project is not to ship a production Redis clone. The point is to learn the mechanics underneath one: storing keys and values, handling commands, returning typed results, and growing the system one tested step at a time.
+I'm building it to understand key/value storage, command handling, typed results, and expiration, one tested step at a time.
 
 ## Current State
 
-The project currently has an in-memory store and a command dispatcher.
+The project currently has an in-memory string store, a command dispatcher, and store-level TTL support.
 
 Implemented behavior:
 
-- `SET key value` stores a string value.
+- `SET key value` stores a string value and clears any previous TTL.
 - `GET key` returns the stored string or a null-style result when the key is missing.
 - `EXISTS key` returns `1` or `0`.
-- `DEL key` removes a key and returns `1` or `0`.
-- `INCR key` increments integer-like string values, creates missing counters at `1`, and reports errors for invalid numbers or overflow.
+- `DEL key` removes a key and its expiration metadata, returning `1` or `0`.
+- `INCR key` increments integer-like string values, preserves an existing TTL, creates missing counters at `1`, and reports errors for invalid numbers or overflow.
 - Commands are matched case-insensitively.
 
-The code also has typed command result classes for status, string, integer, null, and error responses. These are not RESP wire protocol responses yet; they are internal Java result objects used by the dispatcher and tests.
+The store's `expire(key, seconds)` method sets or replaces a TTL. A non-positive TTL removes an existing key immediately; a missing or expired key returns `0`. `EXPIRE` is not wired into the command dispatcher yet.
+
+Expiration is lazy: `GET` and `EXISTS` remove expired entries when accessed, and `DEL`, `INCR`, and `expire` use those checks. There is no background expiration worker. The store accepts an injected `Clock` for deterministic time behavior and defaults to `Clock.systemUTC()`.
+
+Status, string, integer, null, and error responses are internal Java result objects.
 
 What does not exist yet:
 
@@ -25,7 +29,6 @@ What does not exist yet:
 - RESP parser or serializer.
 - Real Redis client compatibility.
 - Persistence.
-- Expiration / TTL.
 - Concurrency model.
 - Multiple data types beyond strings.
 
@@ -42,6 +45,7 @@ src/test/java/dev/miniredis/
   MiniRedisStoreTest.java
   CommandDispatcherTest.java
   CommandResultTest.java
+  MutableClock.java          # test-only controllable clock
 ```
 
 ## Build And Test
@@ -57,6 +61,8 @@ If Maven is installed globally, this should also work:
 ```powershell
 mvn test
 ```
+
+The suite currently has 43 tests. TTL tests cover expiration at the deadline, missing and expired keys, zero TTL, replacing a TTL, `SET` clearing it, and `INCR` preserving it. `DEL` has basic tests, but TTL-specific deletion tests are still missing. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
 
 ## Development Philosophy
 
@@ -76,6 +82,6 @@ The goal is to be able to say, truthfully:
 ## Suggested Next Checkpoints
 
 Likely next learning checkpoints are:
-TTL → Data Structures → RESP + TCP → Multiple Clients → Persistence
+Finish TTL edge cases and dispatcher support → Data Structures → RESP + TCP → Multiple Clients → Persistence
 
 Each checkpoint should stay small enough to test and explain before moving on.
