@@ -2,14 +2,12 @@ package dev.miniredis;
 
 import org.junit.jupiter.api.Test;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-
 
 public class MiniRedisStoreTest {
 
@@ -186,5 +184,19 @@ public class MiniRedisStoreTest {
         clock.advanceSeconds(7L);
         assertTrue(testStore.exists("something"));
         assertEquals("5", testStore.get("something"));
+    }
+
+    @Test
+    void expireOnExpiredKey_ReturnsZero(){
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        ZoneId zoneId = ZoneOffset.UTC;
+        MutableClock clock = new MutableClock(instant,zoneId);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("something","5");
+        testStore.expire("something",3L);
+        clock.advanceSeconds(7L);
+        assertEquals(0L,testStore.expire("something",4L));
+        assertFalse(testStore.exists("something"));
+        assertNull(testStore.get("something"));
     }
 }
