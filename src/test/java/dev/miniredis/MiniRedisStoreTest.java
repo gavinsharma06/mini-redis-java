@@ -12,160 +12,161 @@ import java.time.ZoneOffset;
 public class MiniRedisStoreTest {
 
     @Test
-    void setValueGetStoredValue(){
+    void setValueGetStoredValue() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("language","Java");
+        testStore.set("language", "Java");
         String actual = testStore.get("language");
-        assertEquals("Java",actual);
+        assertEquals("Java", actual);
     }
 
     @Test
-    void presentKeyShouldExist(){
+    void presentKeyShouldExist() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("David","exists");
+        testStore.set("David", "exists");
         assertTrue(testStore.exists("David"));
     }
 
     @Test
-    void missingKeyShouldNotExist(){
+    void missingKeyShouldNotExist() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("Alice","exists");
+        testStore.set("Alice", "exists");
         assertFalse(testStore.exists("Ali"));
     }
 
     @Test
-    void presentKeyDeleteKeyShouldNotExist(){
+    void presentKeyDeleteKeyShouldNotExist() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("David","bout to be deleted");
-        assertEquals(1,testStore.delete("David"));
+        testStore.set("David", "bout to be deleted");
+        assertEquals(1, testStore.delete("David"));
         assertFalse(testStore.exists("David"));
     }
 
     @Test
-    void missingKeyDeleteKeyReturnZero(){
+    void missingKeyDeleteKeyReturnZero() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("David","Dave be deleted instead");
-        assertEquals(0,testStore.delete("Dave"));
+        testStore.set("David", "Dave be deleted instead");
+        assertEquals(0, testStore.delete("Dave"));
     }
 
     @Test
-    void incrMissingKeyReturnOneShouldExist(){
+    void incrMissingKeyReturnOneShouldExist() {
         MiniRedisStore testStore = new MiniRedisStore();
-        assertEquals(1L,testStore.incr("david"));
-        assertEquals("1",testStore.get("david"));
+        assertEquals(1L, testStore.incr("david"));
+        assertEquals("1", testStore.get("david"));
     }
 
     @Test
-    void incrExistingPositiveNumber(){
+    void incrExistingPositiveNumber() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("counter","52");
-        assertEquals(53L,testStore.incr("counter"));
-        assertEquals("53",testStore.get("counter"));
+        testStore.set("counter", "52");
+        assertEquals(53L, testStore.incr("counter"));
+        assertEquals("53", testStore.get("counter"));
     }
 
     @Test
-    void incrNegativeNumber(){
+    void incrNegativeNumber() {
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("counter", "-1");
         assertEquals(0L, testStore.incr("counter"));
         assertEquals("0", testStore.get("counter"));
     }
+
     @Test
-    void incrInvalidValueThrowsException(){
+    void incrInvalidValueThrowsException() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("counter","banana");
-        assertThrows(NumberFormatException.class,() -> testStore.incr("counter"));
+        testStore.set("counter", "banana");
+        assertThrows(NumberFormatException.class, () -> testStore.incr("counter"));
     }
 
     @Test
-    void incrInvalidValueDoesNotChangeStoredValue(){
+    void incrInvalidValueDoesNotChangeStoredValue() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("counter","banana");
-        assertThrows(NumberFormatException.class,() -> testStore.incr("counter"));
+        testStore.set("counter", "banana");
+        assertThrows(NumberFormatException.class, () -> testStore.incr("counter"));
         assertEquals("banana", testStore.get("counter"));
     }
 
     @Test
-    void incrOverflowThrowsException(){
-        MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("counter",String.valueOf(Long.MAX_VALUE));
-        assertThrows(ArithmeticException.class, () -> testStore.incr("counter"));
-    }
-
-    @Test
-    void incrOverflowDoesNotChangeStoredValue(){
+    void incrOverflowThrowsException() {
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("counter", String.valueOf(Long.MAX_VALUE));
         assertThrows(ArithmeticException.class, () -> testStore.incr("counter"));
-        assertEquals(String.valueOf(Long.MAX_VALUE),testStore.get("counter"));
     }
 
     @Test
-    void incrInvalidNumberThrowsException(){
+    void incrOverflowDoesNotChangeStoredValue() {
+        MiniRedisStore testStore = new MiniRedisStore();
+        testStore.set("counter", String.valueOf(Long.MAX_VALUE));
+        assertThrows(ArithmeticException.class, () -> testStore.incr("counter"));
+        assertEquals(String.valueOf(Long.MAX_VALUE), testStore.get("counter"));
+    }
+
+    @Test
+    void incrInvalidNumberThrowsException() {
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("counter", "9223372036854775808");
-        assertThrows(NumberFormatException.class,()->testStore.incr("counter"));
+        assertThrows(NumberFormatException.class, () -> testStore.incr("counter"));
     }
 
     @Test
-    void incrInvalidNumberDoesNotChangeStoredValue(){
+    void incrInvalidNumberDoesNotChangeStoredValue() {
         MiniRedisStore testStore = new MiniRedisStore();
         testStore.set("counter", "9223372036854775808");
-        assertThrows(NumberFormatException.class,()->testStore.incr("counter"));
-        assertEquals("9223372036854775808",testStore.get("counter"));
+        assertThrows(NumberFormatException.class, () -> testStore.incr("counter"));
+        assertEquals("9223372036854775808", testStore.get("counter"));
     }
 
     @Test
-    void expireExistingKeyWithPositiveTTL_keepsKeyAvailableAndReturnsOne(){
+    void expireExistingKeyWithPositiveTTL_keepsKeyAvailableAndReturnsOne() {
         Instant instant = Instant.parse("2026-01-01T00:00:00Z");
         Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
         MiniRedisStore testStore = new MiniRedisStore(clock);
-        testStore.set("name","bro");
+        testStore.set("name", "bro");
         assertEquals(1L, testStore.expire("name", 5L));
         assertTrue(testStore.exists("name"));
         assertEquals("bro", testStore.get("name"));
     }
 
     @Test
-    void expireExistingKeyWithPositiveTTL_RemovesKeyAfterTTL(){
+    void expireExistingKeyWithPositiveTTL_RemovesKeyAfterTTL() {
         Instant instant = Instant.parse("2026-01-01T00:00:00Z");
-        ZoneId zone = ZoneOffset.UTC ;
+        ZoneId zone = ZoneOffset.UTC;
         MutableClock clock = new MutableClock(instant, zone);
         MiniRedisStore testStore = new MiniRedisStore(clock);
         testStore.set("name", "Gavin");
-        testStore.expire("name",5L);
+        testStore.expire("name", 5L);
         clock.advanceSeconds(5L);
         assertFalse(testStore.exists("name"));
     }
 
     @Test
-    void expireOnExistingKey_AndTTLIsZero_RemovesKeyReturnsOne(){
+    void expireOnExistingKey_AndTTLIsZero_RemovesKeyReturnsOne() {
         MiniRedisStore testStore = new MiniRedisStore();
-        testStore.set("name","Brah");
-        assertEquals(1L,testStore.expire("name",0L ));
+        testStore.set("name", "Brah");
+        assertEquals(1L, testStore.expire("name", 0L));
         assertFalse(testStore.exists("name"));
         assertNull(testStore.get("name"));
     }
 
     @Test
-    void expireOnMissingKey_ReturnsZero_AndDoesNotModifyStore(){
+    void expireOnMissingKey_ReturnsZero_AndDoesNotModifyStore() {
         MiniRedisStore testStore = new MiniRedisStore();
-        assertEquals(0L,testStore.expire("something",5L));
+        assertEquals(0L, testStore.expire("something", 5L));
         assertFalse(testStore.exists("something"));
         assertNull(testStore.get("something"));
     }
 
     @Test
-    void expireOnExistingKeyWithExistingTTL_ReplacesTheTTL(){
+    void expireOnExistingKeyWithExistingTTL_ReplacesTheTTL() {
         Instant instant = Instant.parse("2026-01-01T00:00:00Z");
-        ZoneId zone = ZoneOffset.UTC ;
+        ZoneId zone = ZoneOffset.UTC;
         MutableClock clock = new MutableClock(instant, zone);
         MiniRedisStore testStore = new MiniRedisStore(clock);
-        testStore.set("something","10");
-        testStore.expire("something",5L);
+        testStore.set("something", "10");
+        testStore.expire("something", 5L);
         clock.advanceSeconds(2L);
         assertTrue(testStore.exists("something"));
-        testStore.expire("something",10L);
+        testStore.expire("something", 10L);
         clock.advanceSeconds(3L);
         assertTrue(testStore.exists("something"));
         clock.advanceSeconds(7L);
@@ -173,30 +174,44 @@ public class MiniRedisStoreTest {
     }
 
     @Test
-    void setOnExistingKeyWithExistingTTL_RemovesTTL(){
+    void setOnExistingKeyWithExistingTTL_RemovesTTL() {
         Instant instant = Instant.parse("2026-01-01T00:00:00Z");
-        ZoneId zone = ZoneOffset.UTC ;
+        ZoneId zone = ZoneOffset.UTC;
         MutableClock clock = new MutableClock(instant, zone);
         MiniRedisStore testStore = new MiniRedisStore(clock);
-        testStore.set("something","10");
-        testStore.expire("something",5L);
-        testStore.set("something","5");
+        testStore.set("something", "10");
+        testStore.expire("something", 5L);
+        testStore.set("something", "5");
         clock.advanceSeconds(7L);
         assertTrue(testStore.exists("something"));
         assertEquals("5", testStore.get("something"));
     }
 
     @Test
-    void expireOnExpiredKey_ReturnsZero(){
+    void expireOnExpiredKey_ReturnsZero() {
         Instant instant = Instant.parse("2026-01-01T00:00:00Z");
         ZoneId zoneId = ZoneOffset.UTC;
-        MutableClock clock = new MutableClock(instant,zoneId);
+        MutableClock clock = new MutableClock(instant, zoneId);
         MiniRedisStore testStore = new MiniRedisStore(clock);
-        testStore.set("something","5");
-        testStore.expire("something",3L);
+        testStore.set("something", "5");
+        testStore.expire("something", 3L);
         clock.advanceSeconds(7L);
-        assertEquals(0L,testStore.expire("something",4L));
+        assertEquals(0L, testStore.expire("something", 4L));
         assertFalse(testStore.exists("something"));
         assertNull(testStore.get("something"));
+    }
+
+    @Test
+    void incrOnExistingKeyWithExistingTTL_DoesNotModifyTheTTL() {
+        Instant instant = Instant.parse("2026-01-01T00:00:00Z");
+        ZoneId zone = ZoneOffset.UTC;
+        MutableClock clock = new MutableClock(instant, zone);
+        MiniRedisStore testStore = new MiniRedisStore(clock);
+        testStore.set("something", "10");
+        testStore.expire("something", 5L);
+        assertEquals(11L,testStore.incr("something"));
+        assertEquals("11", testStore.get("something"));
+        clock.advanceSeconds(5L);
+        assertFalse(testStore.exists("something"));
     }
 }
