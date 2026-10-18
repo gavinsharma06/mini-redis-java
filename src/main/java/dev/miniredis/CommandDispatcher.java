@@ -50,10 +50,24 @@ public class CommandDispatcher {
                 long value = store.incr(arguments.get(0));
                 return new IntegerResult(value);
             } catch (NumberFormatException e){
-                return new ErrorResult("Value is not numeric");
+                return new ErrorResult("Value is not a valid number");
             }catch (ArithmeticException e){
                 return  new ErrorResult("Overflow Occurred, Game Over");
             }
+        } else if (commandName.equalsIgnoreCase("EXPIRE")) {
+            if (arguments.size() != 2){
+                return new ErrorResult("Valid arguments not found");
+            }
+            try {
+                long ttl = Long.parseLong(arguments.get(1));
+                String key = arguments.get(0);
+                return new IntegerResult(store.expire(key,ttl));
+            } catch (NumberFormatException e){
+                return new ErrorResult("Value is not a valid number");
+            } catch (ArithmeticException e) {
+                return  new ErrorResult("Overflow Occurred, Game Over");
+            }
+
         }
         return new ErrorResult("command not available / incorrect command") ;
 
