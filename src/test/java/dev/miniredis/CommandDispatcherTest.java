@@ -180,7 +180,7 @@ public class CommandDispatcherTest {
         CommandResult result = dispatcher.dispatch("INCR", List.of("name"));
         assertTrue(result instanceof ErrorResult);
         ErrorResult errorResult = (ErrorResult) result;
-        assertEquals("Value is not numeric",errorResult.getError());
+        assertEquals("Value is not a valid number",errorResult.getError());
         assertEquals("GAVIN",testStore.get("name"));
     }
 
@@ -217,6 +217,41 @@ public class CommandDispatcherTest {
         StatusResult statusResult= (StatusResult) result;
         assertEquals("OK", statusResult.getValue());
         assertEquals("Bro",testStore.get("name"));
+    }
+
+    @Test
+    void dispatcher_OnExpireWithValidTTL_ReturnsCorrectIntegerResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("Gavin","5");
+        CommandResult result = dispatcher.dispatch("EXPIRE", List.of("Gavin","5"));
+        assertTrue(result instanceof IntegerResult);
+        IntegerResult integerResult = (IntegerResult) result;
+        assertEquals(1L,integerResult.getValue());
+    }
+
+    @Test
+    void dispatcher_OnExpireWithInvalidException_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        testStore.set("Gavin","5");
+        CommandResult result = dispatcher.dispatch("EXPIRE",List.of("Gavin","Not a number"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Value is not a valid number",errorResult.getError());
+    }
+
+    @Test
+    void dispatcher_OnExpire_OnOverflow_ReturnsCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        long max = Long.MAX_VALUE;
+        testStore.set("Gavin","5");
+        String maxString = String.valueOf(max);
+        CommandResult result = dispatcher.dispatch("Expire", List.of("Gavin",maxString));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Overflow Occurred, Game Over", errorResult.getError());
     }
 
 
