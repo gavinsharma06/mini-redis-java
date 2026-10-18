@@ -62,7 +62,9 @@ If Maven is installed globally, this should also work:
 mvn test
 ```
 
-The suite currently has 43 tests. TTL tests cover expiration at the deadline, missing and expired keys, zero TTL, replacing a TTL, `SET` clearing it, and `INCR` preserving it. `DEL` has basic tests, but TTL-specific deletion tests are still missing. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
+The suite currently contains 44 test methods. TTL tests cover expiration at the deadline, missing and expired keys, zero TTL, replacing a TTL, `SET` clearing it, `INCR` preserving it, and overflow in TTL conversion and deadline calculation. `DEL` has basic tests, but TTL-specific deletion tests are still missing. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
+
+TTL conversion and deadline calculation use exact arithmetic: overflow throws `ArithmeticException` before a new expiration is stored. GitHub Actions is configured to build and test with Java 21 on pushes and pull requests to `main`.
 
 ## Development Philosophy
 
@@ -81,7 +83,6 @@ The goal is to be able to say, truthfully:
 
 ## Suggested Next Checkpoints
 
-Likely next learning checkpoints are:
-Finish TTL edge cases and dispatcher support → Data Structures → RESP + TCP → Multiple Clients → Persistence
+Finish TTL edge cases and dispatcher support, then work through data structures, RESP and TCP, multiple clients, and persistence. These are proposed checkpoints; only the behavior listed above is implemented.
 
 Each checkpoint should stay small enough to test and explain before moving on.
