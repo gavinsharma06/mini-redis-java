@@ -254,5 +254,15 @@ public class CommandDispatcherTest {
         assertEquals("Overflow Occurred, Game Over", errorResult.getError());
     }
 
+    @Test
+    void dispatcher_OnExpireWithInvalidArity_ReturnCorrectErrorResult(){
+        MiniRedisStore testStore = new MiniRedisStore();
+        CommandDispatcher dispatcher = new CommandDispatcher(testStore);
+        CommandResult result = dispatcher.dispatch("EXPIRE", List.of("Gavin"));
+        assertTrue(result instanceof ErrorResult);
+        ErrorResult errorResult = (ErrorResult) result;
+        assertEquals("Valid arguments not found",errorResult.getError());
+    }
+
 
 }
