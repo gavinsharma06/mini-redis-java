@@ -16,8 +16,9 @@ Implemented behavior:
 - `DEL key` removes a key and its expiration metadata, returning `1` or `0`.
 - `INCR key` increments integer-like string values, preserves an existing TTL, creates missing counters at `1`, and reports errors for invalid numbers or overflow.
 - Commands are matched case-insensitively.
+- `EXPIRE key seconds` sets or replaces a TTL, returning `1` for a live key or `0` for a missing or expired key. Invalid TTL numbers and arithmetic overflow return error results.
 
-The store's `expire(key, seconds)` method sets or replaces a TTL. A non-positive TTL removes an existing key immediately; a missing or expired key returns `0`. `EXPIRE` is not wired into the command dispatcher yet.
+The store's `expire(key, seconds)` method backs the dispatcher's `EXPIRE` command. A non-positive TTL removes an existing key immediately; a missing or expired key returns `0`.
 
 Expiration is lazy: `GET` and `EXISTS` remove expired entries when accessed, and `DEL`, `INCR`, and `expire` use those checks. There is no background expiration worker. The store accepts an injected `Clock` for deterministic time behavior and defaults to `Clock.systemUTC()`.
 
@@ -62,7 +63,7 @@ If Maven is installed globally, this should also work:
 mvn test
 ```
 
-The suite currently contains 44 test methods. TTL tests cover expiration at the deadline, missing and expired keys, zero TTL, replacing a TTL, `SET` clearing it, `INCR` preserving it, and overflow in TTL conversion and deadline calculation. `DEL` has basic tests, but TTL-specific deletion tests are still missing. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
+The suite currently contains 48 test methods. TTL tests cover expiration at the deadline, missing and expired keys, zero TTL, replacing a TTL, `SET` clearing it, `INCR` preserving it, and overflow in TTL conversion and deadline calculation. Dispatcher tests also cover `EXPIRE` success, invalid TTL input, overflow, and invalid arity. `DEL` has basic tests, but TTL-specific deletion tests are still missing. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
 
 TTL conversion and deadline calculation use exact arithmetic: overflow throws `ArithmeticException` before a new expiration is stored. GitHub Actions is configured to build and test with Java 21 on pushes and pull requests to `main`.
 
@@ -83,6 +84,6 @@ The goal is to be able to say, truthfully:
 
 ## Suggested Next Checkpoints
 
-Finish TTL edge cases and dispatcher support, then work through data structures, RESP and TCP, multiple clients, and persistence. These are proposed checkpoints; only the behavior listed above is implemented.
+Finish TTL edge-case coverage, then work through data structures, RESP and TCP, multiple clients, and persistence. These are proposed checkpoints; only the behavior listed above is implemented.
 
 Each checkpoint should stay small enough to test and explain before moving on.
