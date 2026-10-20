@@ -20,6 +20,9 @@ public class RespSerializer {
             String value = errorResult.getError();
             byte[] serializedValue = ("-ERR "+value+"\r\n").getBytes(StandardCharsets.UTF_8);
             return serializedValue;
+        } else if (commandResult instanceof NullResult) {
+            byte[] serializedValue = "$-1\r\n".getBytes(StandardCharsets.UTF_8);
+            return serializedValue;
         }
         return null;
     }
