@@ -63,4 +63,12 @@ public class RespSerializerTest {
         byte[] expected = "$2\r\n\u00E9\r\n".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expected, serializer.serialize(stringResult));
     }
+
+    @Test
+    void serializeOnStringResultWithCLRF_ReturnsCorrectBytes(){
+        RespSerializer serializer = new RespSerializer();
+        StringResult stringResult = new StringResult("a\r\nb");
+        byte[] expected = "$4\r\na\r\nb\r\n".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected, serializer.serialize(stringResult));
+    }
 }
