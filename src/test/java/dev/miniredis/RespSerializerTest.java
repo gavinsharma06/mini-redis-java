@@ -23,4 +23,12 @@ public class RespSerializerTest {
         byte[] expected = ":56\r\n".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expected,serializer.serialize(integerResult));
     }
+
+    @Test
+    void serializeOnErrorResult_ReturnsCorrectBytes(){
+        RespSerializer serializer = new RespSerializer();
+        ErrorResult errorResult = new ErrorResult(ErrorResult.INVALID_COMMAND);
+        byte[] expected = "-ERR command not available / incorrect command\r\n".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected,serializer.serialize(errorResult));
+    }
 }
