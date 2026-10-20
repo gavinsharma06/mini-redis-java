@@ -23,6 +23,12 @@ public class RespSerializer {
         } else if (commandResult instanceof NullResult) {
             byte[] serializedValue = "$-1\r\n".getBytes(StandardCharsets.UTF_8);
             return serializedValue;
+        } else if (commandResult instanceof StringResult) {
+            StringResult stringResult = (StringResult) commandResult;
+            String value = stringResult.getValue();
+            int count =value.getBytes(StandardCharsets.UTF_8).length;
+            byte [] serializedValue = ("$"+count+"\r\n"+value+"\r\n").getBytes(StandardCharsets.UTF_8);
+            return serializedValue;
         }
         return null;
     }

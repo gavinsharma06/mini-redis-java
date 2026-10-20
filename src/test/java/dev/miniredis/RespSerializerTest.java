@@ -39,4 +39,28 @@ public class RespSerializerTest {
         byte[] expected = "$-1\r\n".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expected,serializer.serialize(nullResult));
     }
+
+    @Test
+    void serializeOnStringResult_ReturnsCorrectBytes(){
+        RespSerializer serializer = new RespSerializer();
+        StringResult stringResult = new StringResult("hello");
+        byte[] expected = "$5\r\nhello\r\n".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected, serializer.serialize(stringResult));
+    }
+
+    @Test
+    void serializeOnStringResultWithEmptyString_ReturnCorrectBytes(){
+        RespSerializer serializer = new RespSerializer();
+        StringResult stringResult = new StringResult("");
+        byte[] expected = "$0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected, serializer.serialize(stringResult));
+    }
+
+    @Test
+    void serializeOnStringResult_ReturnsCorrectUTF8Bytes(){
+        RespSerializer serializer = new RespSerializer();
+        StringResult stringResult = new StringResult("\u00E9");
+        byte[] expected = "$2\r\n\u00E9\r\n".getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected, serializer.serialize(stringResult));
+    }
 }
