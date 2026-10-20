@@ -12,14 +12,14 @@ public class CommandDispatcher {
     public CommandResult dispatch(String commandName, List<String> arguments){
         if (commandName.equalsIgnoreCase("SET")){
             if (arguments.size()!=2){
-                return new ErrorResult("Valid arguments not found");
+                return new ErrorResult(ErrorResult.INVALID_ARITY);
             }
             store.set(arguments.get(0),arguments.get(1));
             return new StatusResult("OK") ;
         } else if (commandName.equalsIgnoreCase("GET")) {
 
             if (arguments.size()!=1){
-                return new ErrorResult("Valid arguments not found") ;
+                return new ErrorResult(ErrorResult.INVALID_ARITY) ;
             }
             String value = store.get(arguments.get(0));
             if (value==null) {
@@ -29,7 +29,7 @@ public class CommandDispatcher {
 
         } else if (commandName.equalsIgnoreCase("EXISTS")) {
             if (arguments.size() !=1){
-                return new ErrorResult("Valid arguments not found");
+                return new ErrorResult(ErrorResult.INVALID_ARITY);
             }
             boolean value = store.exists(arguments.get(0));
             if (value){
@@ -38,38 +38,38 @@ public class CommandDispatcher {
             return new IntegerResult(0L);
         } else if (commandName.equalsIgnoreCase("DEL")) {
             if (arguments.size()!= 1){
-                return new ErrorResult("Valid arguments not found");
+                return new ErrorResult(ErrorResult.INVALID_ARITY);
             }
             int value = store.delete(arguments.get(0));
             return new IntegerResult(value);
         } else if(commandName.equalsIgnoreCase("INCR")){
             if(arguments.size() != 1){
-                return new ErrorResult("Valid arguments not found");
+                return new ErrorResult(ErrorResult.INVALID_ARITY);
             }
             try {
                 long value = store.incr(arguments.get(0));
                 return new IntegerResult(value);
             } catch (NumberFormatException e){
-                return new ErrorResult("Value is not a valid number");
+                return new ErrorResult(ErrorResult.INVALID_NUMBER);
             }catch (ArithmeticException e){
-                return  new ErrorResult("Overflow Occurred, Game Over");
+                return  new ErrorResult(ErrorResult.ILLEGAL_OVERFLOW);
             }
         } else if (commandName.equalsIgnoreCase("EXPIRE")) {
             if (arguments.size() != 2){
-                return new ErrorResult("Valid arguments not found");
+                return new ErrorResult(ErrorResult.INVALID_ARITY);
             }
             try {
                 long ttl = Long.parseLong(arguments.get(1));
                 String key = arguments.get(0);
                 return new IntegerResult(store.expire(key,ttl));
             } catch (NumberFormatException e){
-                return new ErrorResult("Value is not a valid number");
+                return new ErrorResult(ErrorResult.INVALID_NUMBER);
             } catch (ArithmeticException e) {
-                return  new ErrorResult("Overflow Occurred, Game Over");
+                return  new ErrorResult(ErrorResult.ILLEGAL_OVERFLOW);
             }
 
         }
-        return new ErrorResult("command not available / incorrect command") ;
+        return new ErrorResult(ErrorResult.INVALID_COMMAND) ;
 
     }
 
