@@ -71,4 +71,9 @@ public class RespSerializerTest {
         byte[] expected = "$4\r\na\r\nb\r\n".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expected, serializer.serialize(stringResult));
     }
+    @Test
+    void serializerOnNullInput_throwsNullPointerException(){
+        RespSerializer serializer = new RespSerializer();
+        assertThrows(NullPointerException.class, () -> serializer.serialize(null));
+    }
 }

@@ -1,10 +1,12 @@
 package dev.miniredis;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class RespSerializer {
 
     public byte[] serialize(CommandResult commandResult){
+        Objects.requireNonNull(commandResult, "commandResult must not be null");
         if (commandResult instanceof StatusResult){
             StatusResult statusResult = (StatusResult) commandResult;
             String value = statusResult.getValue();
