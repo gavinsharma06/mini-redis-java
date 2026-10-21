@@ -72,8 +72,14 @@ public class RespSerializerTest {
         assertArrayEquals(expected, serializer.serialize(stringResult));
     }
     @Test
-    void serializerOnNullInput_throwsNullPointerException(){
+    void serializerOnNullInput_ThrowsNullPointerException(){
         RespSerializer serializer = new RespSerializer();
         assertThrows(NullPointerException.class, () -> serializer.serialize(null));
+    }
+
+    @Test void serializerOnUnknownResultType_ThrowsIllegalArgumentException(){
+        RespSerializer serializer = new RespSerializer();
+        UnknownResult unknownResult = new UnknownResult();
+        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(unknownResult));
     }
 }

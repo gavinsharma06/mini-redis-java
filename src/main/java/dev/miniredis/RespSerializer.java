@@ -32,6 +32,6 @@ public class RespSerializer {
             byte [] serializedValue = ("$"+count+"\r\n"+value+"\r\n").getBytes(StandardCharsets.UTF_8);
             return serializedValue;
         }
-        return null;
+        throw new IllegalArgumentException("Unsupported command result type");
     }
 }
