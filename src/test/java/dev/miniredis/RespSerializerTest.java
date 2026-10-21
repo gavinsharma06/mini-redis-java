@@ -77,9 +77,38 @@ public class RespSerializerTest {
         assertThrows(NullPointerException.class, () -> serializer.serialize(null));
     }
 
-    @Test void serializerOnUnknownResultType_ThrowsIllegalArgumentException(){
+    @Test
+    void serializerOnUnknownResultType_ThrowsIllegalArgumentException(){
         RespSerializer serializer = new RespSerializer();
         UnknownResult unknownResult = new UnknownResult();
         assertThrows(IllegalArgumentException.class, () -> serializer.serialize(unknownResult));
+    }
+
+    @Test
+    void serializerOnStatusResultWithCarriageReturn_ThrowsIllegalArgumentException(){
+        RespSerializer serializer = new RespSerializer();
+        StatusResult statusResult = new StatusResult("a\r");
+        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(statusResult));
+    }
+
+    @Test
+    void serializerOnStatusResultWithLineFeed_ThrowsIllegalArgumentException(){
+        RespSerializer serializer = new RespSerializer();
+        StatusResult statusResult = new StatusResult("a\n");
+        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(statusResult));
+    }
+
+    @Test
+    void serializerOnErrorResultWithCarriageReturn_ThrowsIllegalArgumentException(){
+        RespSerializer serializer = new RespSerializer();
+        ErrorResult errorResult = new ErrorResult("Value is not a valid number\r");
+        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(errorResult));
+    }
+
+    @Test
+    void serializerOnErrorResultWithLineFeed_ThrowsIllegalArgumentException(){
+        RespSerializer serializer = new RespSerializer();
+        ErrorResult errorResult = new ErrorResult("Value is not a valid number\n");
+        assertThrows(IllegalArgumentException.class, () -> serializer.serialize(errorResult));
     }
 }

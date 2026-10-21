@@ -10,6 +10,9 @@ public class RespSerializer {
         if (commandResult instanceof StatusResult){
             StatusResult statusResult = (StatusResult) commandResult;
             String value = statusResult.getValue();
+            if (value.contains("\r") || value.contains("\n")){
+                throw new IllegalArgumentException("Cannot contain CRLF");
+            }
             byte[] serializedValue = ("+"+value+"\r\n").getBytes(StandardCharsets.UTF_8);
             return serializedValue;
         } else if (commandResult instanceof  IntegerResult) {
@@ -20,6 +23,9 @@ public class RespSerializer {
         } else if (commandResult instanceof ErrorResult) {
             ErrorResult errorResult = (ErrorResult) commandResult;
             String value = errorResult.getError();
+            if (value.contains("\r") || value.contains("\n")){
+                throw new IllegalArgumentException("Cannot contain CRLF");
+            }
             byte[] serializedValue = ("-ERR "+value+"\r\n").getBytes(StandardCharsets.UTF_8);
             return serializedValue;
         } else if (commandResult instanceof NullResult) {
