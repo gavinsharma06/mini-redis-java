@@ -37,4 +37,12 @@ public class RespRequestParserTest {
         assertEquals("PING",parsedCommand.commandName());
         assertEquals(List.of(), parsedCommand.arguments());
     }
+
+    @Test
+    void rejectsInvalidArrayPrefix() throws IOException {
+        byte [] value = "!2\r\n$3\r\nGET\r\n$4\r\nname\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
 }

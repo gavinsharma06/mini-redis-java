@@ -38,7 +38,7 @@ public class RespRequestParser {
                     elements.subList(1, elements.size())
             );
         }
-        return null;
+        throw  new IOException("Expected RESP array prefix '*'");
     }
 
     private String readLine(InputStream inputStream) throws IOException {
