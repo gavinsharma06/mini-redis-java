@@ -27,4 +27,14 @@ public class RespRequestParserTest {
         assertEquals("SET",parsedCommand.commandName());
         assertEquals(List.of("name","Gavin"),parsedCommand.arguments());
     }
+
+    @Test
+    void parsedCommandWithNoArguments() throws IOException{
+        byte [] value = "*1\r\n$4\r\nPING\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        ParsedCommand parsedCommand = parser.parse(request);
+        assertEquals("PING",parsedCommand.commandName());
+        assertEquals(List.of(), parsedCommand.arguments());
+    }
 }
