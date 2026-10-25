@@ -14,6 +14,9 @@ public class RespRequestParser {
         if (firstValue == '*'){
             String countText = readLine(inputStream);
             int elementCount = Integer.parseInt(countText);
+            if (elementCount <= 0){
+                throw new IOException("Invalid RESP command array length");
+            }
             List<String> elements = new ArrayList<>();
             for ( int i =0; i< elementCount; i++){
                 String lengthHeader = readLine(inputStream);
@@ -41,7 +44,7 @@ public class RespRequestParser {
         throw  new IOException("Expected RESP array prefix '*'");
     }
 
-    private String readLine(InputStream inputStream) throws IOException {
+    private String readLine(InputStream inputStream) throws IOException{
         int currentByte;
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         while ((currentByte = inputStream.read())!=-1){

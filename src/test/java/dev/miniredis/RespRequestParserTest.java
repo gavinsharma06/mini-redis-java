@@ -45,4 +45,20 @@ public class RespRequestParserTest {
         RespRequestParser parser = new RespRequestParser();
         assertThrows(IOException.class, () -> parser.parse(request));
     }
+
+    @Test
+    void rejectsEmptyRESPCommandArray(){
+        byte[] value = "*0\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectInvalidBulkStringPrefix(){
+        byte [] value = "*2\r\n$3\r\nGET\r\n!4\r\nname\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
 }
