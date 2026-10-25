@@ -29,6 +29,16 @@ public class RespRequestParserTest {
     }
 
     @Test
+    void parsedValidSetCommand_WithEmptyString() throws IOException{
+        byte [] value = "*3\r\n$3\r\nSET\r\n$4\r\nname\r\n$0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        ParsedCommand parsedCommand = parser.parse(request);
+        assertEquals("SET",parsedCommand.commandName());
+        assertEquals(List.of("name",""),parsedCommand.arguments());
+    }
+
+    @Test
     void parsedCommandWithNoArguments() throws IOException{
         byte [] value = "*1\r\n$4\r\nPING\r\n".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream request = new ByteArrayInputStream(value);
@@ -57,6 +67,22 @@ public class RespRequestParserTest {
     @Test
     void rejectInvalidBulkStringPrefix(){
         byte [] value = "*2\r\n$3\r\nGET\r\n!4\r\nname\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectInvalidBulkStringLength(){
+        byte [] value = "*1\r\n$abc\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectNegativeBulkStringLength(){
+        byte [] value = "*1\r\n$-2\r\n".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream request = new ByteArrayInputStream(value);
         RespRequestParser parser = new RespRequestParser();
         assertThrows(IOException.class, () -> parser.parse(request));

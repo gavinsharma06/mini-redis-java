@@ -23,7 +23,15 @@ public class RespRequestParser {
                 if (!lengthHeader.startsWith("$")) {
                     throw new IOException("Invalid bulk string prefix");
                 }
-                int length = Integer.parseInt(lengthHeader.substring(1));
+                int length;
+               try {
+                   length = Integer.parseInt(lengthHeader.substring(1));
+               } catch (NumberFormatException e) {
+                   throw new IOException("Invalid bulk string length", e);
+               }
+               if (length < 0){
+                   throw new IOException("Invalid bulk string length");
+               }
                 byte[] data = inputStream.readNBytes(length);
                 if (data.length != length) {
                     throw new IOException("Incomplete bulk string");
