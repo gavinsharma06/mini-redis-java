@@ -6,7 +6,7 @@ I'm building it to understand key/value storage, command handling, typed results
 
 ## Current State
 
-The project currently has an in-memory string store, a command dispatcher, store-level TTL support, and RESP2 response serialization.
+The project currently has an in-memory string store, a command dispatcher, TTL support, RESP2 response serialization, and RESP request parsing.
 
 Implemented behavior:
 
@@ -34,10 +34,13 @@ Status, string, integer, null, and error responses are represented as typed Java
 
 Status and error messages containing either CR or LF are rejected with `IllegalArgumentException`. Java null input throws `NullPointerException`; unsupported result types throw `IllegalArgumentException`. These are developer-facing failures, not serialized client error responses. Serialization does not send bytes over a network.
 
+`RespRequestParser` reads one command from an `InputStream` as a non-empty RESP array of UTF-8 bulk strings and returns a `ParsedCommand` containing the command name and arguments. Repeated calls read consecutive commands from the same stream. Clean EOF before a new command returns Java `null`; malformed or incomplete requests throw `IOException`.
+
+The parser preserves empty strings and embedded CRLF, checks lengths in bytes, and rejects malformed UTF-8, invalid framing, and numeric headers containing anything other than ASCII decimal digits. Limits are 1,024 array elements, 1,048,576 bytes per bulk string, and 64 bytes per header. It supports this command-request subset rather than every RESP type or arbitrary binary values.
+
 What does not exist yet:
 
 - TCP server.
-- RESP request parser.
 - Real Redis client compatibility.
 - Persistence.
 - Concurrency model.
@@ -52,12 +55,15 @@ src/main/java/dev/miniredis/
   CommandResult.java         # result marker interface
   *Result.java               # typed result objects
   RespSerializer.java        # RESP2 response bytes
+  RespRequestParser.java     # RESP command requests from an InputStream
+  ParsedCommand.java         # command name and arguments
 
 src/test/java/dev/miniredis/
   MiniRedisStoreTest.java
   CommandDispatcherTest.java
   CommandResultTest.java
   RespSerializerTest.java
+  RespRequestParserTest.java
   UnknownResult.java         # test-only unsupported result helper
   MutableClock.java          # test-only controllable clock
 ```
@@ -76,9 +82,11 @@ If Maven is installed globally, this should also work:
 mvn test
 ```
 
-The suite currently contains 69 tests: 30 store tests, 23 dispatcher tests, 2 result tests, and 14 serializer tests. TTL tests cover expiration at the deadline, missing and expired keys, zero and negative TTL, replacing a TTL, `SET` clearing it, and `INCR` preserving it. Regression tests also cover `GET`, `INCR`, and `DEL` accessing expired keys, deleting and recreating an expiring key, and preserving the previous TTL when a replacement overflows. Dispatcher tests cover `EXPIRE` success, invalid TTL input, overflow, and invalid arity. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
+The suite currently contains 95 tests: 30 store tests, 23 dispatcher tests, 2 result tests, 14 serializer tests, and 26 parser tests. TTL tests cover expiration at the deadline, missing and expired keys, zero and negative TTL, replacing a TTL, `SET` clearing it, and `INCR` preserving it. Regression tests also cover `GET`, `INCR`, and `DEL` accessing expired keys, deleting and recreating an expiring key, and preserving the previous TTL when a replacement overflows. Dispatcher tests cover `EXPIRE` success, invalid TTL input, overflow, and invalid arity. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
 
 Serializer tests cover all five result types, UTF-8 byte lengths, empty and multiline bulk strings, separate CR/LF rejection for status and error messages, null input, and unsupported result types.
+
+Parser tests cover valid requests, empty and multibyte strings, embedded CRLF, consecutive commands, clean EOF, malformed and truncated input, strict numeric headers, malformed UTF-8, and resource limits.
 
 TTL conversion and deadline calculation use exact arithmetic: overflow throws `ArithmeticException` before a new expiration is stored. GitHub Actions is configured to build and test with Java 21 on pushes and pull requests to `main`.
 
@@ -99,6 +107,6 @@ The goal is to be able to say, truthfully:
 
 ## Suggested Next Checkpoints
 
-TTL regression coverage and RESP response serialization are implemented. The next planned checkpoint is RESP request parsing, followed by a single-client TCP server and a selected-command redis-cli demonstration. Additional data structures, multiple clients, and persistence remain future work.
+RESP response serialization and request parsing are merged into `main`. The next checkpoint is a single-client TCP server connecting parsing, dispatch, and serialization, followed by a selected-command redis-cli demonstration. Additional data structures, multiple clients, and persistence remain future work.
 
 Each checkpoint should stay small enough to test and explain before moving on.
