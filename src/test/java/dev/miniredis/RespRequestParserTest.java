@@ -104,7 +104,6 @@ public class RespRequestParserTest {
         ByteArrayInputStream request = new ByteArrayInputStream(value);
         RespRequestParser parser = new RespRequestParser();
         IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
-        assertThrows(IOException.class, () -> parser.parse(request));
         assertEquals("Incomplete bulk string",exception.getMessage());
     }
 
@@ -136,5 +135,49 @@ public class RespRequestParserTest {
         ParsedCommand parsedAgain = parser.parse(request);
         assertEquals("PING",parsedAgain.commandName());
         assertEquals(List.of(), parsedAgain.arguments());
+    }
+
+    @Test
+    void rejectsNonNumericArrayCount(){
+        byte[] value = "*abc\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectsExcessiveArrayCount(){
+        byte[] value = "*1025\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("RESP array exceeds maximum elements",exception.getMessage());
+    }
+
+    @Test
+    void rejectsExcessiveBulkStringLength(){
+        byte[] value = "*1\r\n$1048577\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("RESP bulk string exceeds maximum length",exception.getMessage());
+    }
+
+    @Test
+    void rejectsOversizedRespHeader() {
+        String input = "*" + "1".repeat(65) + "\r\n";
+        byte[] value = input.getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("RESP header exceeds maximum length",exception.getMessage());
+    }
+
+    @Test
+    void returnsNullOnCleanEOF() throws IOException {
+        byte[] value = "".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        assertNull(parser.parse(request));
     }
 }
