@@ -180,4 +180,40 @@ public class RespRequestParserTest {
         RespRequestParser parser = new RespRequestParser();
         assertNull(parser.parse(request));
     }
+
+    @Test
+    void rejectsPositiveSignInArrayCount(){
+        byte[] value = "*+1\r\n$4\r\nPING\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("Invalid RESP command array length",exception.getMessage());
+    }
+
+    @Test
+    void rejectsUnicodeDigitInArrayCount(){
+        byte[] value = "*١\r\n$4\r\nPING\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("Invalid RESP command array length",exception.getMessage());
+    }
+
+    @Test
+    void rejectsPositiveSignInBulkLength(){
+        byte[] value = "*1\r\n$+4\r\nPING\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("Invalid bulk string length",exception.getMessage());
+    }
+
+    @Test
+    void rejectsNegativeZeroBulkLength(){
+        byte[] value = "*1\r\n$-0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream request = new ByteArrayInputStream(value);
+        RespRequestParser parser = new RespRequestParser();
+        IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
+        assertEquals("Invalid bulk string length",exception.getMessage());
+    }
 }

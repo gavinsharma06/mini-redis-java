@@ -21,6 +21,9 @@ public class RespRequestParser {
         if (firstValue == '*'){
             String countText = readLine(inputStream);
             int elementCount;
+            if (!isAsciiDecimal(countText)) {
+                throw new IOException("Invalid RESP command array length");
+            }
             try {
                 elementCount = Integer.parseInt(countText);
             } catch (NumberFormatException e) {
@@ -38,6 +41,9 @@ public class RespRequestParser {
                     throw new IOException("Invalid bulk string prefix");
                 }
                 int length;
+                if (!isAsciiDecimal(lengthHeader.substring(1))) {
+                    throw new IOException("Invalid bulk string length");
+                }
                try {
                    length = Integer.parseInt(lengthHeader.substring(1));
                } catch (NumberFormatException e) {
@@ -90,5 +96,18 @@ public class RespRequestParser {
         }
         throw new IOException("Unexpected EOF while reading RESP line");
 
+    }
+
+    private boolean isAsciiDecimal(String value){
+        if (value.isEmpty()){
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char current = value.charAt(i);
+            if (current < '0' || current > '9'){
+                return false;
+            }
+        }
+        return true;
     }
 }
