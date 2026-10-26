@@ -1,6 +1,7 @@
 package dev.miniredis;
 import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -216,4 +217,38 @@ public class RespRequestParserTest {
         IOException exception = assertThrows(IOException.class, () -> parser.parse(request));
         assertEquals("Invalid bulk string length",exception.getMessage());
     }
+
+    @Test
+    void rejectsMalformedUTF8Key() throws IOException{
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bytes.write("*3\r\n$3\r\nSET\r\n$1\r\n".getBytes(StandardCharsets.UTF_8));
+        bytes.write(0x80);
+        bytes.write("\r\n$5\r\nGavin\r\n".getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream request = new ByteArrayInputStream(bytes.toByteArray());
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectsMalformedUTF8Value() throws IOException{
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bytes.write("*3\r\n$3\r\nSET\r\n$4\r\nname\r\n$1\r\n".getBytes(StandardCharsets.UTF_8));
+        bytes.write(0x81);
+        bytes.write("\r\n".getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream request = new ByteArrayInputStream(bytes.toByteArray());
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
+    @Test
+    void rejectsTruncatedUTF8Sequence() throws IOException{
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bytes.write("*1\r\n$1\r\n".getBytes(StandardCharsets.UTF_8));
+        bytes.write(0xC3);
+        bytes.write("\r\n".getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream request = new ByteArrayInputStream(bytes.toByteArray());
+        RespRequestParser parser = new RespRequestParser();
+        assertThrows(IOException.class, () -> parser.parse(request));
+    }
+
 }

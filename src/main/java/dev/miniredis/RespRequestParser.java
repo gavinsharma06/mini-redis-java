@@ -3,6 +3,8 @@ package dev.miniredis;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +65,9 @@ public class RespRequestParser {
                 if (cr != '\r' || lf != '\n') {
                     throw new IOException("Invalid bulk string terminator");
                 }
-                String decoded = new String(data,StandardCharsets.UTF_8);
+                var decoder = StandardCharsets.UTF_8.newDecoder();
+                decoder.onMalformedInput(CodingErrorAction.REPORT);
+                String decoded = decoder.decode(ByteBuffer.wrap(data)).toString();
                 elements.add(decoded);
             }
             return new ParsedCommand(
