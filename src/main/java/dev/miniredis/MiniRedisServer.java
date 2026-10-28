@@ -1,5 +1,8 @@
 package dev.miniredis;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+
 public class MiniRedisServer  {
 
 
@@ -7,5 +10,11 @@ public class MiniRedisServer  {
 
     public MiniRedisServer (int port){
         this.port = port;
+    }
+
+    public void start() throws IOException{
+        try (ServerSocket socket = new ServerSocket(port)) {
+            System.out.println("MiniRedis listening on port " + socket.getLocalPort());
+        }
     }
 }
