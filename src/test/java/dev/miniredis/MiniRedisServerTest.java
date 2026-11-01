@@ -26,7 +26,13 @@ public class MiniRedisServerTest {
         }
         serverThread.join(2000);
         assertFalse(serverThread.isAlive());
+    }
 
-
+    @Test
+    void miniRedisServerOnInvalidPortThrowsIllegalArgumentException(){
+        assertThrows(IllegalArgumentException.class, () -> new MiniRedisServer(-1));
+        assertDoesNotThrow(()-> new MiniRedisServer(0));
+        assertDoesNotThrow(()-> new MiniRedisServer(6379));
+        assertThrows(IllegalArgumentException.class, () -> new MiniRedisServer(65536));
     }
 }

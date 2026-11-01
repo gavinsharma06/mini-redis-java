@@ -10,6 +10,9 @@ public class MiniRedisServer  {
     private final int port;
 
     public MiniRedisServer (int port){
+        if (0 > port || port > 65535){
+            throw new IllegalArgumentException("Invalid port");
+        }
         this.port = port;
     }
 
