@@ -1,25 +1,31 @@
 package dev.miniredis;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
 
 public class MiniRedisServer  {
 
 
     private final int port;
+    private final CountDownLatch serverReady;
+
 
     public MiniRedisServer (int port){
+        this(port, new CountDownLatch(1));
+    }
+    public MiniRedisServer(int port, CountDownLatch serverReady){
         if (0 > port || port > 65535){
             throw new IllegalArgumentException("Invalid port");
         }
         this.port = port;
+        this.serverReady = serverReady;
     }
 
     public void start() throws IOException{
         try (ServerSocket socket = new ServerSocket(port)) {
             System.out.println("MiniRedis listening on port " + socket.getLocalPort());
-
+            serverReady.countDown();
             try(Socket client = socket.accept()){
                 System.out.println("Client Connected!");
             }

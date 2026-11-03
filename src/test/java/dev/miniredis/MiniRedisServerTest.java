@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,7 +13,8 @@ public class MiniRedisServerTest {
 
     @Test
     void startAcceptsSingleClientConnection() throws Exception {
-        MiniRedisServer server = new MiniRedisServer(6380);
+        CountDownLatch serverReady = new CountDownLatch(1);
+        MiniRedisServer server = new MiniRedisServer(6380,serverReady);
         Thread serverThread = new Thread(() -> {
             try {
                 server.start();
@@ -20,7 +23,7 @@ public class MiniRedisServerTest {
             }
         });
         serverThread.start();
-        Thread.sleep(500);
+        assertTrue(serverReady.await(2, TimeUnit.SECONDS));
         try (Socket socket = new Socket("127.0.0.1", 6380);) {
 
         }
