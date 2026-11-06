@@ -3,11 +3,13 @@ package dev.miniredis;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
+import java.net.Socket;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MiniRedisServerTest {
@@ -15,7 +17,8 @@ public class MiniRedisServerTest {
     @Test
     void startAcceptsSingleClientConnection() throws Exception {
         CountDownLatch serverReady = new CountDownLatch(1);
-        MiniRedisServer server = new MiniRedisServer(6380,serverReady);
+        AtomicInteger boundPort = new AtomicInteger(0);
+        MiniRedisServer server = new MiniRedisServer(0,serverReady, boundPort);
         AtomicReference<Throwable> serverFailure = new AtomicReference<>();
         Thread serverThread = new Thread(() -> {
             try {
@@ -26,7 +29,7 @@ public class MiniRedisServerTest {
         });
         serverThread.start();
         assertTrue(serverReady.await(2, TimeUnit.SECONDS));
-        try (Socket socket = new Socket("127.0.0.1", 6380);) {
+        try (Socket client = new Socket("127.0.0.1", boundPort.get());) {
 
         }
         serverThread.join(2000);
