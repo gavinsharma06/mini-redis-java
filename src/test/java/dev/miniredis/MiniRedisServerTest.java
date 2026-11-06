@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,11 +16,12 @@ public class MiniRedisServerTest {
     void startAcceptsSingleClientConnection() throws Exception {
         CountDownLatch serverReady = new CountDownLatch(1);
         MiniRedisServer server = new MiniRedisServer(6380,serverReady);
+        AtomicReference<Throwable> serverFailure = new AtomicReference<>();
         Thread serverThread = new Thread(() -> {
             try {
                 server.start();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                serverFailure.set(e);
             }
         });
         serverThread.start();
@@ -29,6 +31,8 @@ public class MiniRedisServerTest {
         }
         serverThread.join(2000);
         assertFalse(serverThread.isAlive());
+        assertNull(serverFailure.get());
+
     }
 
     @Test
