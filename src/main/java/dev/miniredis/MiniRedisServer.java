@@ -42,6 +42,8 @@ public class MiniRedisServer  {
                 if (command != null) {
                     CommandDispatcher dispatcher = new CommandDispatcher(store);
                     CommandResult result = dispatcher.dispatch(command.commandName(), command.arguments());
+                    RespSerializer serializer = new RespSerializer();
+                    byte[] responseBytes = serializer.serialize(result);
                     System.out.println(command.commandName());
                 }
             }
