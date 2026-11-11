@@ -36,7 +36,11 @@ public class MiniRedisServer  {
             serverReady.countDown();
             try(Socket client = socket.accept()){
                 InputStream input = client.getInputStream();
-                System.out.println("Client Connected!");
+                RespRequestParser parser = new RespRequestParser();
+                ParsedCommand command = parser.parse(input);
+                if (command != null) {
+                    System.out.println(command.commandName());
+                }
             }
         }
     }
