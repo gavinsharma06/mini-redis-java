@@ -1,5 +1,6 @@
 package dev.miniredis;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +35,7 @@ public class MiniRedisServer  {
             boundPort.set(socket.getLocalPort());
             serverReady.countDown();
             try(Socket client = socket.accept()){
+                InputStream input = client.getInputStream();
                 System.out.println("Client Connected!");
             }
         }
