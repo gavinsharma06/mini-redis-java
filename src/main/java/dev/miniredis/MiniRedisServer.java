@@ -12,6 +12,7 @@ public class MiniRedisServer  {
     private final int port;
     private final CountDownLatch serverReady;
     private final AtomicInteger boundPort;
+    private final MiniRedisStore store = new MiniRedisStore();
 
 
     public MiniRedisServer (int port){
@@ -39,6 +40,8 @@ public class MiniRedisServer  {
                 RespRequestParser parser = new RespRequestParser();
                 ParsedCommand command = parser.parse(input);
                 if (command != null) {
+                    CommandDispatcher dispatcher = new CommandDispatcher(store);
+                    CommandResult result = dispatcher.dispatch(command.commandName(), command.arguments());
                     System.out.println(command.commandName());
                 }
             }
