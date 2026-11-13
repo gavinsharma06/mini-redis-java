@@ -1,6 +1,7 @@
 package dev.miniredis;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.CountDownLatch;
@@ -44,6 +45,8 @@ public class MiniRedisServer  {
                     CommandResult result = dispatcher.dispatch(command.commandName(), command.arguments());
                     RespSerializer serializer = new RespSerializer();
                     byte[] responseBytes = serializer.serialize(result);
+                    OutputStream output = client.getOutputStream();
+                    output.write(responseBytes);
                     System.out.println(command.commandName());
                 }
             }
