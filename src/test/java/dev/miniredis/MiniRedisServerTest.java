@@ -3,20 +3,22 @@ package dev.miniredis;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.net.Socket;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MiniRedisServerTest {
 
     @Test
-    void startAcceptsSingleClientConnection() throws Exception {
+    void startProcessesRespCommandOverTcp() throws Exception {
         CountDownLatch serverReady = new CountDownLatch(1);
+        String request = "*3\r\n$3\r\nSET\r\n$4\r\nname\r\n$5\r\nGavin\r\n";
         AtomicInteger boundPort = new AtomicInteger(0);
         MiniRedisServer server = new MiniRedisServer(0,serverReady, boundPort);
         AtomicReference<Throwable> serverFailure = new AtomicReference<>();
@@ -30,11 +32,18 @@ public class MiniRedisServerTest {
         serverThread.start();
         assertTrue(serverReady.await(2, TimeUnit.SECONDS));
         try (Socket client = new Socket("127.0.0.1", boundPort.get());) {
-
+            OutputStream output = client.getOutputStream();
+            output.write(request.getBytes(StandardCharsets.UTF_8));
+            InputStream input = client.getInputStream();
+            client.setSoTimeout(3000);
+            byte[] response = input.readNBytes(5);
+            String actual = new String(response, StandardCharsets.UTF_8);
+            assertEquals("+OK\r\n", actual);
         }
         serverThread.join(2000);
         assertFalse(serverThread.isAlive());
         assertNull(serverFailure.get());
+
 
     }
 
