@@ -39,16 +39,22 @@ public class MiniRedisServer  {
             try(Socket client = socket.accept()){
                 InputStream input = client.getInputStream();
                 RespRequestParser parser = new RespRequestParser();
-                ParsedCommand command = parser.parse(input);
-                if (command != null) {
-                    CommandDispatcher dispatcher = new CommandDispatcher(store);
-                    CommandResult result = dispatcher.dispatch(command.commandName(), command.arguments());
-                    RespSerializer serializer = new RespSerializer();
-                    byte[] responseBytes = serializer.serialize(result);
-                    OutputStream output = client.getOutputStream();
-                    output.write(responseBytes);
-                    System.out.println(command.commandName());
+
+                while(true){
+                    ParsedCommand command = parser.parse(input);
+                    if (command != null) {
+                        CommandDispatcher dispatcher = new CommandDispatcher(store);
+                        CommandResult result = dispatcher.dispatch(command.commandName(), command.arguments());
+                        RespSerializer serializer = new RespSerializer();
+                        byte[] responseBytes = serializer.serialize(result);
+                        OutputStream output = client.getOutputStream();
+                        output.write(responseBytes);
+                        System.out.println(command.commandName());
+                    }else{
+                        break;
+                    }
                 }
+
             }
         }
     }
