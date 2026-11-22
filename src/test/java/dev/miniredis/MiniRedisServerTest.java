@@ -16,9 +16,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MiniRedisServerTest {
 
     @Test
-    void startProcessesRespCommandOverTcp() throws Exception {
+    void startProcessesMultipleRespCommandsOverTcp() throws Exception {
         CountDownLatch serverReady = new CountDownLatch(1);
         String request = "*3\r\n$3\r\nSET\r\n$4\r\nname\r\n$5\r\nGavin\r\n";
+        String getRequest = "*2\r\n$3\r\nGET\r\n$4\r\nname\r\n";
         AtomicInteger boundPort = new AtomicInteger(0);
         MiniRedisServer server = new MiniRedisServer(0,serverReady, boundPort);
         AtomicReference<Throwable> serverFailure = new AtomicReference<>();
@@ -39,6 +40,10 @@ public class MiniRedisServerTest {
             byte[] response = input.readNBytes(5);
             String actual = new String(response, StandardCharsets.UTF_8);
             assertEquals("+OK\r\n", actual);
+            output.write(getRequest.getBytes(StandardCharsets.UTF_8));
+            byte[] getResponse = input.readNBytes(11);
+            String getActual = new String(getResponse, StandardCharsets.UTF_8);
+            assertEquals("$5\r\nGavin\r\n",getActual);
         }
         serverThread.join(2000);
         assertFalse(serverThread.isAlive());
