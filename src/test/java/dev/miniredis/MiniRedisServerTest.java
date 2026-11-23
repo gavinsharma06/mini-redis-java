@@ -44,12 +44,11 @@ public class MiniRedisServerTest {
             byte[] getResponse = input.readNBytes(11);
             String getActual = new String(getResponse, StandardCharsets.UTF_8);
             assertEquals("$5\r\nGavin\r\n",getActual);
+            client.shutdownOutput();
         }
         serverThread.join(2000);
         assertFalse(serverThread.isAlive());
         assertNull(serverFailure.get());
-
-
     }
 
     @Test
@@ -58,5 +57,31 @@ public class MiniRedisServerTest {
         assertDoesNotThrow(()-> new MiniRedisServer(0));
         assertDoesNotThrow(()-> new MiniRedisServer(6379));
         assertThrows(IllegalArgumentException.class, () -> new MiniRedisServer(65536));
+    }
+
+    @Test
+    void malformedRespTerminatesServerWithIOException() throws Exception{
+        CountDownLatch serverReady = new CountDownLatch(1);
+        String malformedRequest = "*1\r\n!3\r\nGET\r\n";
+        AtomicInteger boundPort = new AtomicInteger(0);
+        MiniRedisServer server = new MiniRedisServer(0,serverReady, boundPort);
+        AtomicReference<Throwable> serverFailure = new AtomicReference<>();
+        Thread serverThread = new Thread(() -> {
+            try {
+                server.start();
+            } catch (IOException e) {
+                serverFailure.set(e);
+            }
+        });
+        serverThread.start();
+        assertTrue(serverReady.await(2, TimeUnit.SECONDS));
+        try (Socket client = new Socket("127.0.0.1", boundPort.get());) {
+            OutputStream output = client.getOutputStream();
+            output.write(malformedRequest.getBytes(StandardCharsets.UTF_8));
+            client.shutdownOutput();
+        }
+        serverThread.join(2000);
+        assertFalse(serverThread.isAlive());
+        assertInstanceOf(IOException.class, serverFailure.get());
     }
 }
