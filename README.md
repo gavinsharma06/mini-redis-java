@@ -1,55 +1,66 @@
 # MiniRedis Java
 
-MiniRedis Java is a small educational project: a Redis-like command layer built from scratch in Java.
+MiniRedis is a small Redis-like server built from scratch in Java 21. It stores strings in memory, supports key expiration, and accepts a subset of RESP2 over TCP.
 
-I'm building it to understand key/value storage, command handling, typed results, expiration, and wire-format serialization, one tested step at a time.
+I'm building it to learn how a TCP server turns bytes from a client into commands and replies.
 
 ## Current State
 
-The project currently has an in-memory string store, a command dispatcher, TTL support, RESP2 response serialization, and RESP request parsing.
-
-Implemented behavior:
+The server supports six commands. Command names are case-insensitive.
 
 - `SET key value` stores a string value and clears any previous TTL.
-- `GET key` returns the stored string or a null-style result when the key is missing.
+- `GET key` returns the stored string or a RESP null bulk string when the key is missing.
 - `EXISTS key` returns `1` or `0`.
 - `DEL key` removes a key and its expiration metadata, returning `1` or `0`.
 - `INCR key` increments integer-like string values, preserves an existing TTL, creates missing counters at `1`, and reports errors for invalid numbers or overflow.
-- Commands are matched case-insensitively.
 - `EXPIRE key seconds` sets or replaces a TTL, returning `1` for a live key or `0` for a missing or expired key. Invalid TTL numbers and arithmetic overflow return error results.
 
-The store's `expire(key, seconds)` method backs the dispatcher's `EXPIRE` command. A non-positive TTL removes an existing key immediately; a missing or expired key returns `0`.
+A non-positive TTL removes an existing key immediately. Expiration is lazy. The store removes expired keys on access and accepts an injected `Clock` for deterministic tests.
 
-Expiration is lazy: `GET` and `EXISTS` remove expired entries when accessed, and `DEL`, `INCR`, and `expire` use those checks. There is no background expiration worker. The store accepts an injected `Clock` for deterministic time behavior and defaults to `Clock.systemUTC()`.
+## Request Flow
 
-Status, string, integer, null, and error responses are represented as typed Java result objects. The dispatcher uses shared error-message constants for consistent wording.
+`MiniRedisServer` accepts a TCP connection on port `6379`. For each request, `RespRequestParser` reads a command from the socket. `CommandDispatcher` validates the command and calls `MiniRedisStore`. `RespSerializer` converts the resulting `CommandResult` to RESP2 bytes, which the server writes back to the same socket.
 
-`RespSerializer` converts those results into UTF-8 RESP2 response bytes:
+The serializer writes five response types.
 
 - Status results become simple strings, such as `+OK\r\n`.
 - Integer results become RESP integers, such as `:56\r\n`.
 - Error results become simple errors with an `-ERR ` prefix.
-- Null results become null bulk strings: `$-1\r\n`.
+- Null results become null bulk strings (`$-1\r\n`).
 - String results become bulk strings whose length counts UTF-8 content bytes. Empty strings remain distinct from missing values, and embedded CRLF is preserved.
 
-Status and error messages containing either CR or LF are rejected with `IllegalArgumentException`. Java null input throws `NullPointerException`; unsupported result types throw `IllegalArgumentException`. These are developer-facing failures, not serialized client error responses. Serialization does not send bytes over a network.
+`RespRequestParser` reads one command from an `InputStream` as a non-empty RESP array of UTF-8 bulk strings and returns a `ParsedCommand` containing the command name and arguments.
 
-`RespRequestParser` reads one command from an `InputStream` as a non-empty RESP array of UTF-8 bulk strings and returns a `ParsedCommand` containing the command name and arguments. Repeated calls read consecutive commands from the same stream. Clean EOF before a new command returns Java `null`; malformed or incomplete requests throw `IOException`.
+The parser preserves empty strings and embedded CRLF, checks lengths in bytes, and rejects malformed UTF-8, invalid framing, and numeric headers containing anything other than ASCII decimal digits. Limits are 1,024 array elements, 1,048,576 bytes per bulk string, and 64 bytes per header.
 
-The parser preserves empty strings and embedded CRLF, checks lengths in bytes, and rejects malformed UTF-8, invalid framing, and numeric headers containing anything other than ASCII decimal digits. Limits are 1,024 array elements, 1,048,576 bytes per bulk string, and 64 bytes per header. It supports this command-request subset rather than every RESP type or arbitrary binary values.
+## Run on Windows
 
-What does not exist yet:
+With JDK 21 available on your `PATH`, run the following in PowerShell from the repository root.
 
-- TCP server.
-- Real Redis client compatibility.
-- Persistence.
-- Concurrency model.
-- Multiple data types beyond strings.
+```powershell
+.\mvnw.cmd compile
+java -cp target/classes dev.miniredis.MiniRedisServer
+```
+
+Leave that window open. With Docker Desktop running in Linux container mode, open a second PowerShell window and run the Redis 7 client.
+
+```powershell
+docker run redis:7 redis-cli -h host.docker.internal -p 6379 SET name Gavin
+```
+
+On November 23, 2026, Redis 7 `redis-cli` returned `OK` for this `SET` request on Windows with Docker Desktop. That check covers `SET` only.
+
+### Connection behavior
+
+- One server run accepts one connection. That connection can send multiple commands and share the same in-memory store.
+- A clean disconnect between requests stops the request loop and closes the listener. Restart the server before another one-shot `redis-cli` command. Restarting clears the store.
+- Malformed RESP or EOF partway through a request raises `IOException` and stops the server without a RESP reply. A well-formed request with an unknown command or invalid arguments gets a RESP error reply, and the connection stays open.
 
 ## Project Layout
 
 ```text
 src/main/java/dev/miniredis/
+  MiniRedisServer.java       # TCP listener and request loop
   MiniRedisStore.java        # in-memory key/value behavior
   CommandDispatcher.java     # command-name + argument dispatch
   CommandResult.java         # result marker interface
@@ -59,6 +70,7 @@ src/main/java/dev/miniredis/
   ParsedCommand.java         # command name and arguments
 
 src/test/java/dev/miniredis/
+  MiniRedisServerTest.java   # loopback TCP tests and port validation
   MiniRedisStoreTest.java
   CommandDispatcherTest.java
   CommandResultTest.java
@@ -68,7 +80,7 @@ src/test/java/dev/miniredis/
   MutableClock.java          # test-only controllable clock
 ```
 
-## Build And Test
+## Run the JUnit Tests
 
 This is a Maven project targeting Java 21.
 
@@ -76,19 +88,9 @@ This is a Maven project targeting Java 21.
 .\mvnw.cmd test
 ```
 
-If Maven is installed globally, this should also work:
+If Maven is installed globally, you can run `mvn test`.
 
-```powershell
-mvn test
-```
-
-The suite currently contains 95 tests: 30 store tests, 23 dispatcher tests, 2 result tests, 14 serializer tests, and 26 parser tests. TTL tests cover expiration at the deadline, missing and expired keys, zero and negative TTL, replacing a TTL, `SET` clearing it, and `INCR` preserving it. Regression tests also cover `GET`, `INCR`, and `DEL` accessing expired keys, deleting and recreating an expiring key, and preserving the previous TTL when a replacement overflows. Dispatcher tests cover `EXPIRE` success, invalid TTL input, overflow, and invalid arity. Time-based tests use fixed clocks or the test-only `MutableClock`, without sleeps.
-
-Serializer tests cover all five result types, UTF-8 byte lengths, empty and multiline bulk strings, separate CR/LF rejection for status and error messages, null input, and unsupported result types.
-
-Parser tests cover valid requests, empty and multibyte strings, embedded CRLF, consecutive commands, clean EOF, malformed and truncated input, strict numeric headers, malformed UTF-8, and resource limits.
-
-TTL conversion and deadline calculation use exact arithmetic: overflow throws `ArithmeticException` before a new expiration is stored. GitHub Actions is configured to build and test with Java 21 on pushes and pull requests to `main`.
+The TCP tests use a loopback socket to check `SET` and `GET` on one connection, clean disconnect, and malformed input. The rest of the suite covers the store, dispatcher, result types, serializer, and parser. Time-based tests use fixed or controllable clocks. GitHub Actions builds and tests with Java 21 on pushes to `main` and pull requests targeting `main`.
 
 ## Development Philosophy
 
@@ -107,6 +109,4 @@ The goal is to be able to say, truthfully:
 
 ## Suggested Next Checkpoints
 
-RESP response serialization and request parsing are merged into `main`. The next checkpoint is a single-client TCP server connecting parsing, dispatch, and serialization, followed by a selected-command redis-cli demonstration. Additional data structures, multiple clients, and persistence remain future work.
-
-Each checkpoint should stay small enough to test and explain before moving on.
+The next checkpoint is to accept a second client after the first disconnects while keeping the same store. Concurrent clients, persistence, and additional data types are later work.
