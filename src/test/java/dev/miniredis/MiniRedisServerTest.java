@@ -15,6 +15,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MiniRedisServerTest {
 
+    private String sendCommand(Socket client, String request, int expectedBytes) throws IOException {
+        OutputStream output = client.getOutputStream();
+        output.write(request.getBytes(StandardCharsets.UTF_8));
+        InputStream input = client.getInputStream();
+        byte[] response = input.readNBytes(expectedBytes);
+        return new String(response, StandardCharsets.UTF_8);
+    }
+
     @Test
     void startProcessesMultipleRespCommandsOverTcp() throws Exception {
         CountDownLatch serverReady = new CountDownLatch(1);
@@ -33,16 +41,10 @@ public class MiniRedisServerTest {
         serverThread.start();
         assertTrue(serverReady.await(2, TimeUnit.SECONDS));
         try (Socket client = new Socket("127.0.0.1", boundPort.get());) {
-            OutputStream output = client.getOutputStream();
-            output.write(request.getBytes(StandardCharsets.UTF_8));
-            InputStream input = client.getInputStream();
             client.setSoTimeout(3000);
-            byte[] response = input.readNBytes(5);
-            String actual = new String(response, StandardCharsets.UTF_8);
+            String actual = sendCommand(client,request,5);
             assertEquals("+OK\r\n", actual);
-            output.write(getRequest.getBytes(StandardCharsets.UTF_8));
-            byte[] getResponse = input.readNBytes(11);
-            String getActual = new String(getResponse, StandardCharsets.UTF_8);
+            String getActual = sendCommand(client,getRequest,11);
             assertEquals("$5\r\nGavin\r\n",getActual);
             client.shutdownOutput();
         }
